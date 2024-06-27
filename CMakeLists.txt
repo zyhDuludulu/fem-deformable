@@ -46,7 +46,7 @@ CPMAddPackage(
 # automatically. Keep that in mind when changing files, or explicitly mention them here.
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp")
-file(GLOB cuda_sources "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cu")
+file(GLOB_RECURSE cuda_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cu")
 
 # ---- Create library ----
 

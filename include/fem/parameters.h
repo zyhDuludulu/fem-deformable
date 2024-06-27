@@ -1,3 +1,5 @@
+#ifndef FEM_PARAMETERS_H
+#define FEM_PARAMETERS_H
 
 namespace params {
     const int n_x = 10;
@@ -12,3 +14,5 @@ namespace params {
     const float mu = youngs_modulus / (2 * (1 + poisson_ratio));
     const float lambda = youngs_modulus * poisson_ratio / ((1 + poisson_ratio) * (1 - 2 * poisson_ratio));
 }
+
+#endif // FEM_PARAMETERS_H

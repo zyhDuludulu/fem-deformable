@@ -1,3 +1,6 @@
+#ifndef FEM_SIMULATOR_H
+#define FEM_SIMULATOR_H
+
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat2x2.hpp>
@@ -14,7 +17,8 @@ public:
   void init();
   void createMesh();
   void step();
-private:
+
+public:
   int n_points;
   int n_triangles;
   float mu;
@@ -27,3 +31,5 @@ private:
   glm::vec3 triangles [N_TRIANGLES];
   glm::mat2 Dm_inv    [N_TRIANGLES];
 };
+
+#endif // FEM_SIMULATOR_H
