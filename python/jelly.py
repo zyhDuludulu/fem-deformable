@@ -131,7 +131,7 @@ while gui.running:
 
     for _ in range(substepping):
         wp.launch(kernel=init_f, dim=N_points, inputs=[f])
-        wp.launch( kernel=compute_force, dim=N_triangles, inputs=[Dm_invs, x, triangles, f, A])
+        wp.launch(kernel=compute_force, dim=N_triangles, inputs=[Dm_invs, x, triangles, f, A])
         wp.launch(kernel=update, dim=N_points, inputs=[x, v, f])
 
     # render

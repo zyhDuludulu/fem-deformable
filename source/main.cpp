@@ -3,10 +3,11 @@
 #include "fem/simulator.h"
 
 int main() {
-  std::cout << "Hello, World!" << std::endl;
-  glm::vec2 v;
-  v.x = 1.0f;
-  v.y = 2.0f;
-  std::cout << v.x << " " << v.y << std::endl;
   Simulator sim;
+  sim.init();
+  while (true) {
+    for (int i = 0; i < 100; i++) {
+      // sim.step();
+    }
+  }
 }

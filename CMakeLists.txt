@@ -6,10 +6,11 @@ cmake_minimum_required(VERSION 3.22)
 project(
   main
   VERSION 1.0
-  LANGUAGES CXX
+  LANGUAGES CXX CUDA
 )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CUDA_COMPILER nvcc)
 # ---- Include guards ----
 
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -45,12 +46,13 @@ CPMAddPackage(
 # automatically. Keep that in mind when changing files, or explicitly mention them here.
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp")
+file(GLOB cuda_sources "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cu")
 
 # ---- Create library ----
 
 # Note: for header-only libraries change all PUBLIC flags to INTERFACE and create an interface
 # target: add_library(${PROJECT_NAME} INTERFACE)
-add_executable(${PROJECT_NAME} ${headers} ${sources})
+add_executable(${PROJECT_NAME} ${headers} ${sources} ${cuda_sources})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 
 # being a cross-platform target, we enforce standards conformance on MSVC
