@@ -1,4 +1,3 @@
-#include <glm/vec2.hpp>
 #include "simulator.h"
 
 class Solver {
@@ -6,6 +5,7 @@ public:
   Solver() = default;
   ~Solver() = default;
   void setUp(Simulator *sim);
+  void computeDmInv();
   void solve();
 
 private:
@@ -17,4 +17,9 @@ private:
   glm::vec2 *cudaDevicePosition;
   glm::vec2 *cudaDeviceVelocity;
   glm::vec2 *cudaDeviceAcceleration;
+
+  /* the following data can be made constant */
+  glm::ivec3 *cudaDeviceTriangles;
+  glm::mat2 *cudaDeviceDmInv;
+  glm::mat2 *cudaDeviceA;
 };

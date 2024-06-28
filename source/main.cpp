@@ -12,6 +12,7 @@ int main() {
   simulator.createMesh();
   renderer.init();
   solver.setUp(&simulator);
+  solver.computeDmInv();
   while (true) {
     for (int i = 0; i < 100; i++) {
       // sim.step();
