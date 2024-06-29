@@ -7,8 +7,8 @@
 #include "glm/fwd.hpp"
 #include "parameters.h"
 
-#define N_POINTS (params::n_x) * (params::n_y)
-#define N_TRIANGLES 2 * (params::n_x - 1) * (params::n_y - 1)
+#define N_POINTS (params::n_x * params::n_y)
+#define N_TRIANGLES (2 * (params::n_x - 1) * (params::n_y - 1))
 
 class Simulator {
 public:

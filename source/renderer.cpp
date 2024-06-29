@@ -110,6 +110,10 @@ bool Renderer::shouldClose() const {
 }
 
 void Renderer::render() {
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(simulator->x), simulator->x, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 

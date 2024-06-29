@@ -16,10 +16,10 @@ private:
 
   glm::vec2 *cudaDevicePosition;
   glm::vec2 *cudaDeviceVelocity;
-  glm::vec2 *cudaDeviceAcceleration;
+  glm::vec2 *cudaDeviceForce;
 
   /* the following data can be made constant */
   glm::ivec3 *cudaDeviceTriangles;
   glm::mat2 *cudaDeviceDmInv;
-  glm::mat2 *cudaDeviceA;
+  float *cudaDeviceA;
 };

@@ -10,6 +10,7 @@ namespace params {
     const float dx = 1. / 32.;
     const float time_step = 4e-3;
     const float dt = time_step / sub_steps;
+    const float damping = 0.95;
     const float g = 9.8;
     const float youngs_modulus = 1e6;
     const float poisson_ratio = 0.;
