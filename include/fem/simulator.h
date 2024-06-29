@@ -27,8 +27,8 @@ public:
   glm::vec2 v[N_POINTS];
   glm::vec2 f[N_POINTS];
 
+  float A         [N_TRIANGLES];
   glm::ivec3 triangles [N_TRIANGLES];
-  glm::mat2 A         [N_TRIANGLES];
   glm::mat2 Dm_inv    [N_TRIANGLES];
 };
 

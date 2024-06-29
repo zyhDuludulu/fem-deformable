@@ -10,14 +10,13 @@ int main() {
   Renderer    renderer;
 
   simulator.createMesh();
-  renderer.init();
+  renderer.init(&simulator);
   solver.setUp(&simulator);
   solver.computeDmInv();
-  while (true) {
-    for (int i = 0; i < 100; i++) {
-      // sim.step();
-    }
-    break;
+  while (!renderer.shouldClose()) {
+    solver.solve();
+    renderer.render();
+    glfwPollEvents();
   }
   std::cout << "program finished" << std::endl;
 }

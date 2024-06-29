@@ -2,11 +2,13 @@
 #include <cuda_runtime_api.h>
 #include <driver_types.h>
 #include <glm/vec2.hpp>
-#include <iostream>
+#include <cstdio>
+#include <string>
 #include "fem/parameters.h"
 #include "fem/simulator.h"
 #include "fem/solver.h"
 #include "glm/ext/matrix_float2x2.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/matrix.hpp"
 
@@ -20,7 +22,7 @@ struct Constants {
   glm::vec2 *velocity;
   glm::vec2 *acceleration;
   glm::ivec3 *triangles;
-  glm::mat2 *A;
+  float *A;
   glm::mat2 *DmInv;
 };
 
@@ -102,7 +104,49 @@ void Solver::computeDmInv() {
   cudaDeviceSynchronize();
 }
 
+__global__
+void kernelInitAcceleration() {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  cuConstants.acceleration[i] = glm::vec2(0.0f, 0.0f);
+}
+
+__global__
+void kernelComputeForces() {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int a = cuConstants.triangles[i].x;
+  int b = cuConstants.triangles[i].y;
+  int c = cuConstants.triangles[i].z;
+  glm::vec2 x_a = cuConstants.position[a];
+  glm::vec2 x_b = cuConstants.position[b];
+  glm::vec2 x_c = cuConstants.position[c];
+  glm::mat2 Ds = glm::mat2(x_b - x_a, x_c - x_a);
+  glm::mat2 F = Ds * cuConstants.DmInv[i];
+  glm::mat2 E = 0.5f * (glm::transpose(F) * F - glm::identity<glm::mat2>());
+  glm::mat2 P = F * (2.0f * cuConstants.mu * E);
+  glm::mat2 grad = glm::transpose(cuConstants.A[i] * P * glm::transpose(cuConstants.DmInv[i]));
+  atomicAdd(&cuConstants.acceleration[a].x, -grad[0][0]);
+  atomicAdd(&cuConstants.acceleration[a].y, -grad[0][1]);
+  atomicAdd(&cuConstants.acceleration[b].x, -grad[1][0]);
+  atomicAdd(&cuConstants.acceleration[b].y, -grad[1][1]);
+  atomicAdd(&cuConstants.acceleration[c].x, -grad[2][0]);
+  atomicAdd(&cuConstants.acceleration[c].y, -grad[2][1]);
+}
+
+__global__
+void kernelUpdatePosition() {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  cuConstants.velocity[i] += cuConstants.acceleration[i] * cuConstants.dt;
+  cuConstants.position[i] += cuConstants.velocity[i] * cuConstants.dt;
+}
+
 void Solver::solve() {
-  std::cout << "Compiled successfully" << std::endl;
+  for (int i = 0; i < params::sub_steps; i++) {
+    kernelInitAcceleration<<<N_POINTS, 1>>>();
+    cudaDeviceSynchronize();
+    kernelComputeForces<<<N_TRIANGLES, 1>>>();
+    cudaDeviceSynchronize();
+    kernelUpdatePosition<<<N_POINTS, 1>>>();
+  }
+  cp2CPU();
 }
 

@@ -43,6 +43,18 @@ CPMAddPackage(
   GIT_TAG 1.0.1
   GIT_REPOSITORY https://github.com/g-truc/glm.git
 )
+
+CPMAddPackage(
+  NAME glad
+  GIT_TAG v0.1.34
+  GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+)
+
+CPMAddPackage(
+  NAME glfw
+  GIT_TAG 3.3.4
+  GIT_REPOSITORY https://github.com/glfw/glfw.git
+)
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -64,6 +76,8 @@ target_compile_options(${PROJECT_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>
 # Link dependencies
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
+target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

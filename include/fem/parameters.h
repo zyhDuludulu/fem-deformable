@@ -4,8 +4,10 @@
 namespace params {
     const int n_x = 10;
     const int n_y = 10;
+    const int window_width = 800;
+    const int window_height = 800;
     const int sub_steps = 100;
-    const float dx = 1. / 64.;
+    const float dx = 1. / 32.;
     const float time_step = 4e-3;
     const float dt = time_step / sub_steps;
     const float g = 9.8;
