@@ -19,12 +19,14 @@ la = ti.field(dtype=ti.f32, shape=())
 
 n_points = n_x * n_y * n_z
 n_quads = 5 * (n_x - 1) * (n_y - 1) * (n_z - 1)
+n_triangles = 4 * ((n_x - 1) * (n_y - 1) + (n_x - 1) * (n_z - 1) + (n_y - 1) * (n_z - 1))
 x = ti.Vector.field(3, dtype=ti.f32, shape=n_points)
 quads = ti.Vector.field(4, dtype=ti.i32, shape=n_quads)
 v = ti.Vector.field(3, dtype=ti.f32, shape=n_points)
 f = ti.Vector.field(3, dtype=ti.f32, shape=n_points)
 A = ti.field(dtype=ti.f32, shape=n_quads)
 Dm_invs = ti.Matrix.field(3, 3, dtype=ti.f32, shape=n_quads)
+triangles = ti.field(dtype=ti.i32, shape=n_triangles * 3)
 
 @ti.func
 def ijk2index(i, j, k): return i * n_y * n_z + j * n_z + k
@@ -48,34 +50,86 @@ def init_quads():
         for j in range(n_y - 1):
             for k in range(n_z - 1):
                 index = (i * (n_y - 1) * (n_z - 1) + j * (n_z - 1) + k) * 5
-                quads[index][0] = ijk2index(i, j, k)
-                quads[index][1] = ijk2index(i + 1, j, k)
-                quads[index][2] = ijk2index(i + 1, j + 1, k)
-                quads[index][3] = ijk2index(i + 1, j, k + 1)
-
+                quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i + 1, j, k), ijk2index(i + 1, j + 1, k), ijk2index(i + 1, j, k + 1)])
                 index += 1
-                quads[index][0] = ijk2index(i, j, k)
-                quads[index][1] = ijk2index(i, j + 1, k)
-                quads[index][2] = ijk2index(i + 1, j + 1, k)
-                quads[index][3] = ijk2index(i, j + 1, k + 1)
-
+                quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i, j + 1, k), ijk2index(i + 1, j + 1, k), ijk2index(i, j + 1, k + 1)])
                 index += 1
-                quads[index][0] = ijk2index(i, j, k)
-                quads[index][1] = ijk2index(i, j, k + 1)
-                quads[index][2] = ijk2index(i, j + 1, k + 1)
-                quads[index][3] = ijk2index(i + 1, j, k + 1)
-
+                quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i, j, k + 1), ijk2index(i, j + 1, k + 1), ijk2index(i + 1, j, k + 1)])
                 index += 1
-                quads[index][0] = ijk2index(i + 1, j + 1, k + 1)
-                quads[index][1] = ijk2index(i, j + 1, k + 1)
-                quads[index][2] = ijk2index(i + 1, j + 1, k)
-                quads[index][3] = ijk2index(i + 1, j, k + 1)
-
+                quads[index] = ti.Vector([ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j + 1, k + 1), ijk2index(i + 1, j + 1, k), ijk2index(i + 1, j, k + 1)])
                 index += 1
-                quads[index][0] = ijk2index(i + 1, j + 1, k + 1)
-                quads[index][1] = ijk2index(i + 1, j, k)
-                quads[index][2] = ijk2index(i, j + 1, k)
-                quads[index][3] = ijk2index(i, j, k + 1)
+                quads[index] = ti.Vector([ijk2index(i + 1, j + 1, k + 1), ijk2index(i + 1, j, k), ijk2index(i, j + 1, k), ijk2index(i, j, k + 1)])
+
+@ti.kernel
+def init_mesh():
+    base = 0
+    for i in range(n_x - 1):
+        for j in range(n_y - 1):
+            index = base + (i * (n_y - 1) + j) * 4 * 3
+            triangles[index] = ijk2index(i, j, 0)
+            triangles[index+1] = ijk2index(i + 1, j, 0)
+            triangles[index+2] = ijk2index(i, j + 1, 0)
+
+            index += 3
+            triangles[index] = ijk2index(i, j + 1, 0)
+            triangles[index+1] = ijk2index(i + 1, j + 1, 0)
+            triangles[index+2] = ijk2index(i + 1, j, 0)
+
+            index += 3
+            triangles[index] = ijk2index(i, j, n_z - 1)
+            triangles[index+1] = ijk2index(i, j + 1, n_z - 1)
+            triangles[index+2] = ijk2index(i + 1, j, n_z - 1)
+
+            index += 3
+            triangles[index] = ijk2index(i + 1, j, n_z - 1)
+            triangles[index+1] = ijk2index(i, j + 1, n_z - 1)
+            triangles[index+2] = ijk2index(i + 1, j + 1, n_z - 1)
+
+    base += (n_x - 1) * (n_y - 1) * 4 * 3
+    for j in range(n_y - 1):
+        for k in range(n_z - 1):
+            index = base + (j * (n_z - 1) + k) * 4 * 3
+            triangles[index] = ijk2index(0, j, k)
+            triangles[index+1] = ijk2index(0, j + 1, k)
+            triangles[index+2] = ijk2index(0, j, k + 1)
+
+            index += 3
+            triangles[index] = ijk2index(0, j, k + 1)
+            triangles[index+1] = ijk2index(0, j + 1, k)
+            triangles[index+2] = ijk2index(0, j + 1, k + 1)
+
+            index += 3
+            triangles[index] = ijk2index(n_x - 1, j, k)
+            triangles[index+1] = ijk2index(n_x - 1, j, k + 1)
+            triangles[index+2] = ijk2index(n_x - 1, j + 1, k)
+
+            index += 3
+            triangles[index] = ijk2index(n_x - 1, j + 1, k)
+            triangles[index+1] = ijk2index(n_x - 1, j, k + 1)
+            triangles[index+2] = ijk2index(n_x - 1, j + 1, k + 1)
+
+    base += (n_y - 1) * (n_z - 1) * 4 * 3
+    for k in range(n_z - 1):
+        for i in range(n_x - 1):
+            index = base + (k * (n_x - 1) + i) * 4 * 3
+            triangles[index] = ijk2index(i, 0, k)
+            triangles[index+1] = ijk2index(i + 1, 0, k)
+            triangles[index+2] = ijk2index(i, 0, k + 1)
+
+            index += 3
+            triangles[index] = ijk2index(i, 0, k + 1)
+            triangles[index+1] = ijk2index(i + 1, 0, k)
+            triangles[index+2] = ijk2index(i + 1, 0, k + 1)
+
+            index += 3
+            triangles[index] = ijk2index(i, n_y - 1, k)
+            triangles[index+1] = ijk2index(i, n_y - 1, k + 1)
+            triangles[index+2] = ijk2index(i + 1, n_y - 1, k)
+
+            index += 3
+            triangles[index] = ijk2index(i + 1, n_y - 1, k)
+            triangles[index+1] = ijk2index(i, n_y - 1, k + 1)
+            triangles[index+2] = ijk2index(i + 1, n_y - 1, k + 1)
 
 @ti.kernel
 def compute_Dm_invs():
@@ -130,6 +184,7 @@ camera = ti.ui.Camera()
 
 initPointPos()
 init_quads()
+init_mesh()
 compute_Dm_invs()
 init_material()
 
@@ -149,7 +204,10 @@ while window.running:
     camera.lookat(0.0, -0.25, 0)
     scene.set_camera(camera)
 
-    scene.point_light(pos=(0, 1, 2), color=(1, 1, 1))
-    scene.particles(x, radius=0.002, color=(0.5, 0.5, 0.5))
+    scene.point_light(pos=(0, 0, 1), color=(1, 1, 1))
+    scene.mesh( vertices=x,
+                indices=triangles,
+                color=(1, 0.6, 0.0),
+                two_sided=True)
     canvas.scene(scene)
     window.show()
