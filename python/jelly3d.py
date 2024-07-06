@@ -9,16 +9,18 @@ n_y = 10
 n_z = 10
 dx = 1 / 64
 h = 4e-3
-substep = 100
+substep = 50
 dt = h / substep
 g = 9.8
-youngs = 1e7
+m = 0.2
+youngs = 1e6
 poisson = 0.0
 mu = ti.field(ti.f32, ())
 la = ti.field(dtype=ti.f32, shape=())
 
 n_points = n_x * n_y * n_z
-n_quads = 5 * (n_x - 1) * (n_y - 1) * (n_z - 1)
+quads_per_cube = 4
+n_quads = quads_per_cube * (n_x - 1) * (n_y - 1) * (n_z - 1)
 n_triangles = 4 * ((n_x - 1) * (n_y - 1) + (n_x - 1) * (n_z - 1) + (n_y - 1) * (n_z - 1))
 x = ti.Vector.field(3, dtype=ti.f32, shape=n_points)
 quads = ti.Vector.field(4, dtype=ti.i32, shape=n_quads)
@@ -49,16 +51,14 @@ def init_quads():
     for i in range(n_x - 1):
         for j in range(n_y - 1):
             for k in range(n_z - 1):
-                index = (i * (n_y - 1) * (n_z - 1) + j * (n_z - 1) + k) * 5
-                quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i + 1, j, k), ijk2index(i + 1, j + 1, k), ijk2index(i + 1, j, k + 1)])
+                index = (i * (n_y - 1) * (n_z - 1) + j * (n_z - 1) + k) * quads_per_cube
+                quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i + 1, j, k), ijk2index(i, j + 1, k), ijk2index(i, j, k + 1)])
                 index += 1
-                quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i, j + 1, k), ijk2index(i + 1, j + 1, k), ijk2index(i, j + 1, k + 1)])
+                quads[index] = ti.Vector([ijk2index(i + 1, j + 1, k), ijk2index(i, j + 1, k), ijk2index(i + 1, j, k), ijk2index(i + 1, j + 1, k + 1)])
                 index += 1
-                quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i, j, k + 1), ijk2index(i, j + 1, k + 1), ijk2index(i + 1, j, k + 1)])
+                quads[index] = ti.Vector([ijk2index(i + 1, j, k + 1), ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j, k + 1), ijk2index(i + 1, j, k)])
                 index += 1
-                quads[index] = ti.Vector([ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j + 1, k + 1), ijk2index(i + 1, j + 1, k), ijk2index(i + 1, j, k + 1)])
-                index += 1
-                quads[index] = ti.Vector([ijk2index(i + 1, j + 1, k + 1), ijk2index(i + 1, j, k), ijk2index(i, j + 1, k), ijk2index(i, j, k + 1)])
+                quads[index] = ti.Vector([ijk2index(i, j + 1, k + 1), ijk2index(i, j, k + 1), ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j + 1, k)])
 
 @ti.kernel
 def init_mesh():
@@ -150,12 +150,12 @@ def compute_force():
         i, j, k, l = quads[q]
         Ds = ti.Matrix.cols([x[i] - x[j], x[k] - x[j], x[l] - x[j]])
         F = Ds @ Dm_invs[q]
-        E = 0.5 * (F.transpose() @ F - ti.Matrix.identity(ti.f32, 3))
-        P = 2 * mu[None] * E + la[None] * E.trace() * ti.Matrix.identity(ti.f32, 3)
-        H = (A[q] * P @ Dm_invs[q].transpose())
-        gb = H @ ti.Vector([1, 0, 0])
-        gc = H @ ti.Vector([0, 1, 0])
-        gd = H @ ti.Vector([0, 0, 1])
+        R, _ = ti.polar_decompose(F, ti.f32)
+        S = 2 * mu[None] * (F - R) + la[None] * ((R.transpose() @ F - ti.Matrix.identity(ti.f32, 3)) @ F).trace() * R
+        H = A[q] * S @ Dm_invs[q].transpose()
+        gb = ti.Vector([H[0, 0], H[1, 0], H[2, 0]])
+        gc = ti.Vector([H[0, 1], H[1, 1], H[2, 1]])
+        gd = ti.Vector([H[0, 2], H[1, 2], H[2, 2]])
         ga = -gb - gc - gd
         f[i] += gb
         f[k] += gc
@@ -166,15 +166,21 @@ def compute_force():
 @ti.kernel
 def apply_force():
     for i in range(n_points):
-        acc = -f[i] / 1.0 + ti.Vector([0, -g, 0])
+        acc = -f[i] / m + ti.Vector([0, -g, 0])
+        
         v[i] += acc * dt
         x[i] += v[i] * dt
-        v[i] *= ti.exp(-dt * 10.0)
+        v[i] *= ti.exp(-dt * 1.0)
 
         if x[i][1] < -0.5:
             x[i][1] = -0.5
             v[i][1] = 0.0
             v[i] *= 0.9 
+
+@ti.kernel
+def fix_point():
+    x[0] = ti.Vector([(-n_x // 2) * dx, (-n_y // 2) * dx, (-n_z // 2) * dx])
+    v[0] = ti.Vector([0, 0, 0])
 
 window = ti.ui.Window("Jelly 3D", (800, 800))
 canvas = window.get_canvas()
@@ -198,6 +204,7 @@ while window.running:
         init_force()
         compute_force()
         apply_force()
+        # fix_point()
 
     # Render
     camera.position(0.0, -0.25, 1)
