@@ -12,7 +12,7 @@ h = 4e-3
 substep = 50
 dt = h / substep
 g = 9.8
-m = 0.2
+m = 0.1
 youngs = 1e6
 poisson = 0.0
 mu = ti.field(ti.f32, ())
@@ -53,12 +53,9 @@ def init_quads():
             for k in range(n_z - 1):
                 index = (i * (n_y - 1) * (n_z - 1) + j * (n_z - 1) + k) * quads_per_cube
                 quads[index] = ti.Vector([ijk2index(i, j, k), ijk2index(i + 1, j, k), ijk2index(i, j + 1, k), ijk2index(i, j, k + 1)])
-                index += 1
-                quads[index] = ti.Vector([ijk2index(i + 1, j + 1, k), ijk2index(i, j + 1, k), ijk2index(i + 1, j, k), ijk2index(i + 1, j + 1, k + 1)])
-                index += 1
-                quads[index] = ti.Vector([ijk2index(i + 1, j, k + 1), ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j, k + 1), ijk2index(i + 1, j, k)])
-                index += 1
-                quads[index] = ti.Vector([ijk2index(i, j + 1, k + 1), ijk2index(i, j, k + 1), ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j + 1, k)])
+                quads[index + 1] = ti.Vector([ijk2index(i + 1, j + 1, k), ijk2index(i, j + 1, k), ijk2index(i + 1, j, k), ijk2index(i + 1, j + 1, k + 1)])
+                quads[index + 2] = ti.Vector([ijk2index(i + 1, j, k + 1), ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j, k + 1), ijk2index(i + 1, j, k)])
+                quads[index + 3] = ti.Vector([ijk2index(i, j + 1, k + 1), ijk2index(i, j, k + 1), ijk2index(i + 1, j + 1, k + 1), ijk2index(i, j + 1, k)])
 
 @ti.kernel
 def init_mesh():
@@ -170,7 +167,7 @@ def apply_force():
         
         v[i] += acc * dt
         x[i] += v[i] * dt
-        v[i] *= ti.exp(-dt * 1.0)
+        v[i] *= ti.exp(-dt * 5.0)
 
         if x[i][1] < -0.5:
             x[i][1] = -0.5

@@ -2,10 +2,13 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include "LLGL/RenderSystem.h"
+#include "LLGL/ResourceHeap.h"
 #include "fem/simulator.h"
 #include "parameters.h"
+#include "LLGL/LLGL.h"
 
-#define N_EDGES ((params::n_x - 1) * params::n_y + (params::n_y - 1) * params::n_x + (params::n_x - 1) * (params::n_y - 1))
+#define N_TRIANGLES (4 * ((params::n_x - 1) * (params::n_y-1) + (params::n_y - 1) * (params::n_x-1) + (params::n_x - 1) * (params::n_y-1)))
 
 class Renderer {
 public:
@@ -35,7 +38,17 @@ private:
     }
     )";
   unsigned int vao, vbo, ebo, shaderProgram;
-  GLFWwindow* window;
+  LLGL::Window* window;
+  LLGL::RenderSystemPtr myRdr;
+  LLGL::SwapChain* mySwapChain;
+  LLGL::Buffer* myVertexBuffer;
+  LLGL::Buffer* myIndexBuffer;
+  LLGL::Buffer* myConstantBuffer;
+  LLGL::Shader* vertexShader;
+  LLGL::Shader* fragmentShader;
+  LLGL::PipelineState* myPSO;
+  LLGL::CommandBuffer* myCmdBuffer;
+  LLGL::ResourceHeap* myResourceHeap;
   Simulator* simulator;
-  glm::ivec2 edges[N_EDGES];
+  int traingles[N_TRIANGLES * 3];
 };

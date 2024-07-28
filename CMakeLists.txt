@@ -14,6 +14,8 @@ set(CMAKE_CUDA_COMPILER nvcc)
 set(CMAKE_CUDA_USE_RESPONSE_FILE_FOR_INCLUDES 0)
 set(CMAKE_CUDA_USE_RESPONSE_FILE_FOR_LIBRARIES 0)
 set(CMAKE_CUDA_USE_RESPONSE_FILE_FOR_OBJECTS 0)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 # ---- Include guards ----
 
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -54,6 +56,14 @@ CPMAddPackage(
   NAME glfw
   GIT_TAG 3.3.4
   GIT_REPOSITORY https://github.com/glfw/glfw.git
+  OPTIONS "GLFW_BUILD_TESTS OFF" "GLFW_BUILD_EXAMPLES OFF"
+)
+
+CPMAddPackage(
+  NAME LLGL
+  GIT_TAG 0.0.3
+  URL https://github.com/LukasBanana/LLGL/archive/refs/tags/Release-v0.03b.tar.gz
+  OPTIONS "LLGL_BUILD_TESTS OFF" "LLGL_BUILD_EXAMPLES OFF" "LLGL_ENABLE_EXCEPTIONS ON" "LLGL_BUILD_STATIC_LIB OFF" "LLGL_BUILD_RENDERER_NULL OFF"
 )
 # ---- Add source files ----
 
@@ -78,6 +88,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+target_link_libraries(${PROJECT_NAME} PRIVATE LLGL)
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

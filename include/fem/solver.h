@@ -14,12 +14,12 @@ private:
   int *cudaDeviceBlockId;
   Simulator *sim;
 
-  glm::vec2 *cudaDevicePosition;
-  glm::vec2 *cudaDeviceVelocity;
-  glm::vec2 *cudaDeviceForce;
+  glm::vec3 *cudaDevicePosition;
+  glm::vec3 *cudaDeviceVelocity;
+  glm::vec3 *cudaDeviceForce;
 
   /* the following data can be made constant */
-  glm::ivec3 *cudaDeviceTriangles;
-  glm::mat2 *cudaDeviceDmInv;
+  glm::ivec4 *cudaDeviceQuads;
+  glm::mat3 *cudaDeviceDmInv;
   float *cudaDeviceA;
 };

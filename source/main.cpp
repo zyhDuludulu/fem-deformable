@@ -1,5 +1,6 @@
 #include <glm/vec2.hpp>
 #include <iostream>
+#include "LLGL/Surface.h"
 #include "fem/simulator.h"
 #include "fem/solver.h"
 #include "fem/renderer.h"
@@ -13,10 +14,9 @@ int main() {
   renderer.init(&simulator);
   solver.setUp(&simulator);
   solver.computeDmInv();
-  while (!renderer.shouldClose()) {
-    solver.solve();
+  while (LLGL::Surface::ProcessEvents() && renderer.shouldClose()) {
+    // solver.solve();
     renderer.render();
-    glfwPollEvents();
   }
   std::cout << "program finished" << std::endl;
 }
